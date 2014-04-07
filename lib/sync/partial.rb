@@ -80,6 +80,9 @@ module Sync
       PartialCreator.new(name, resource.model, scope, context)
     end
 
+    def order_values_string
+      OrderInfo.new(resource.scopes).values_string(resource.model)
+    end
 
     private
 

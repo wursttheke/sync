@@ -294,6 +294,7 @@ class Sync.PartialCreator
   subscribe: ->
     @adapter.subscribe @channel, (data) =>
       @insert data.html,
+              data.order,
               data.resourceId,
               data.authToken,
               data.channelUpdate,
@@ -304,14 +305,16 @@ class Sync.PartialCreator
 
   insertPlaceholder: (html) ->
     switch @direction
-      when "append"  then @$el.before(html)
+      when "append"  then @$el.nextAll("[data-sync-end]").eq(0).before(html)
       when "prepend" then @$el.after(html)
+      when "sort" then @$el.nextAll("[data-sync-end]").eq(0).before(html)
+        # Here comes the sorting magic...
 
 
-
-  insert: (html, resourceId, authToken, channelUpdate, channelDestroy, selectorStart, selectorEnd) ->
+  insert: (html, order, resourceId, authToken, channelUpdate, channelDestroy, selectorStart, selectorEnd) ->
     @insertPlaceholder """
-      <script type='text/javascript' data-sync-id='#{selectorStart}'></script>
+      <script type='text/javascript' data-sync-id='#{selectorStart}'
+        data-sync-order='#{order}'></script>
       <script type='text/javascript' data-sync-el-placeholder></script>
       <script type='text/javascript' data-sync-id='#{selectorEnd}'></script>
     """

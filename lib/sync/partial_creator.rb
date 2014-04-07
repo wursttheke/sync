@@ -28,6 +28,7 @@ module Sync
     def message
       Sync.client.build_message(channel,
         html: partial.render_to_string,
+        order: partial.order_values_string,
         resourceId: resource.id,
         authToken: partial.auth_token,
         channelUpdate: partial.channel_for_action(:update),
