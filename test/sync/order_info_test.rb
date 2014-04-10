@@ -40,17 +40,10 @@ describe Sync::OrderInfo do
     end
   end
 
-  describe '#directions' do
-    it 'returns an array with directions' do
-      info = Sync::OrderInfo.new(@complex_scope)
-      assert_equal info.directions, [:desc, :asc]
-    end
-  end
-
   describe '#directions_string' do
     it 'returns a string with directions' do
       info = Sync::OrderInfo.new(@complex_scope)
-      assert_equal info.directions_string, "d,a"
+      assert_equal info.directions_string, '{"created_at":"desc","age":"asc"}'
     end
   end
   
@@ -59,8 +52,8 @@ describe Sync::OrderInfo do
       info = Sync::OrderInfo.new(@complex_scope)
       user = User.create!(age: 25)
       values = info.values(user)
-      assert_equal values[0], user.created_at.to_i.to_s
-      assert_equal values[1], "25"
+      assert_equal values[:created_at], user.created_at.to_i
+      assert_equal values[:age], 25
     end
   end
   
@@ -68,7 +61,8 @@ describe Sync::OrderInfo do
     it 'returns attributes of interest in one comma-seperated string' do
       info = Sync::OrderInfo.new(@complex_scope)
       user = User.create!(age: 25)
-      assert_equal info.values_string(user), "#{user.created_at.to_i.to_s},#{25}"
+      assert_equal info.values_string(user), "{\"created_at\":#{user.created_at.to_i},\"age\":25}"
+      
     end
   end
 
