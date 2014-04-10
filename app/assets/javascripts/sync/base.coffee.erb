@@ -1,0 +1,75 @@
+$ = jQuery
+
+@Sync = 
+  
+  ready: false
+  readyQueue: []
+  FAYE_HOST: "<%= Sync.server %>"
+  PUSHER_API_KEY: "<%= Sync.api_key %>"
+  CLIENT_ADAPTER: "<%= Sync.adapter %>"
+
+  init: ->
+    @adapter = new Sync[@CLIENT_ADAPTER]
+    $ =>
+      return if @isReady()
+      @ready = true
+      @connect()
+      @flushReadyQueue()
+      @bindUnsubscribe()
+
+
+  # Handle Turbolinks teardown, unsubscribe from all channels before transition
+  bindUnsubscribe: ->
+    $(document).bind "page:fetch", => @adapter.unsubscribeAll()
+    $(document).bind "page:restore", => @reexecuteScripts()
+
+
+  # Handle Turbolinks cache restore, re-eval all sync script tags
+  reexecuteScripts: ->
+    eval($(script).html()) for script in $("script[data-sync-id]")
+
+
+  onConnectFailure: (error) -> #noop
+
+  connect: -> @adapter.connect()
+
+  isConnected: -> @adapter.isConnected()
+
+  onReady: (callback) ->
+    if @isReady()
+      callback()
+    else
+      @readyQueue.push callback
+
+
+  flushReadyQueue: -> 
+    @onReady(callback) for callback in @readyQueue
+    @readyQueue = []
+
+
+  isReady: -> @ready
+
+  camelize: (str) ->
+    str.replace /(?:^|[-_])(\w)/g, (match, camel) -> camel?.toUpperCase() ? ''
+
+
+  # Find View class to render based on partial and resource names
+  # The class name is looked up based on
+  #  1. The camelized version of the concatenated snake case resource
+  #     and partial names.
+  #  2. The camelized version of the snake cased partialName.
+  #
+  # Examples
+  #   partialName 'list_row', resourceName 'todo', order of lookup:
+  #   Sync.TodoListRow
+  #   Sync.ListRow
+  #   Sync.View
+  #
+  # Defaults to Sync.View if no custom view class has been defined
+  viewClassFromPartialName: (partialName, resourceName) ->
+    Sync[@camelize("#{resourceName}_#{partialName}")] ?
+    Sync[@camelize(partialName)] ?
+    Sync.View
+
+
+
