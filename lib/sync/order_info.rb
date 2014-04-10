@@ -7,7 +7,7 @@ module Sync
     # items locally in the browser via JS
     #
     def initialize(scopes)
-      @order_hash = {}
+      @order_hash = ActiveSupport::OrderedHash.new
       scopes = [scopes] unless scopes.is_a?(Array)
       scopes.each do |scope|
         if scope.is_a?(Sync::Scope)
@@ -19,22 +19,13 @@ module Sync
         end
       end
     end
-    
-    # Returns an Array with directions of the order statement
-    # e.g. ["asc", "desc"]
-    #
-    def directions
-      @order_hash.values
-    end
 
-    # Return the direction information of the order statement in a minimalized
-    # string for being used as HTML-data-attribute interpreted by JS
-    # e.g "a,d"
+    # Return the directional information of the order statement in a json
+    # string for being used as HTML-data-attribute
+    # e.g '{"created_at":"desc","age":"asc"}'
     #
     def directions_string
-      directions.map do |direction|
-        direction == :asc ? "a" : "d"
-      end.join(",")
+      @order_hash.to_json
     end
 
     # Returns an Array of model attribute values needed for sorting
@@ -44,17 +35,20 @@ module Sync
     # e.g. ["1216523", "tom", "1"]
     #
     def values(model)
-      @order_hash.map do |name, direction|
-        case model.class.columns_hash[name.to_s].type
+      return_hash = ActiveSupport::OrderedHash.new
+      @order_hash.each do |name, direction| 
+        return_hash[name] = case model.class.columns_hash[name.to_s].type
         when :boolean
           # Convert Boolean Values to 1/0 so they can be compared in JS.
           #
-          model.send(name) ? "1" : "0"
+          model.send(name) ? 1 : 0
         when :datetime, :date, :time
           # Convert date type columns to integer timestamps for simple
           # comparison.
           #
-          model.send(name).to_i.to_s
+          model.send(name).to_i
+        when :integer
+          model.send(name)
         else
           # Downcase and remove all chars exept numbers and letters, so it's 
           # html safe (and can be used as HTML-data-attribute).
@@ -67,6 +61,8 @@ module Sync
           model.send(name).to_s.downcase.gsub(/[^0-9A-Za-z.\-]/, '')[0..9]
         end
       end
+
+      return_hash
     end
     
     # Returns an HTML safe string with comma seperated model attribute values 
@@ -74,7 +70,7 @@ module Sync
     # e.g. "1216523,tom,1"
     #
     def values_string(model)
-      values(model).join(",")
+      values(model).to_json
     end
     
     # Checks if the order information is empty.
