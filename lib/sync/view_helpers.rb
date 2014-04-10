@@ -95,7 +95,7 @@ module Sync
     
     def partial_tags(partial, refetch)
       "<script type='text/javascript' data-sync-order='#{partial.order_values_string}' 
-        data-sync-id='#{partial.selector_start}'>
+        data-sync-item-start data-sync-id='#{partial.selector_start}'>
         Sync.onReady(function(){
           var partial = new Sync.Partial({
             name:           '#{partial.name}',
@@ -112,12 +112,12 @@ module Sync
         });
       </script>
       #{partial.render}
-      <script type='text/javascript' data-sync-id='#{partial.selector_end}'>
+      <script type='text/javascript' data-sync-item-end data-sync-id='#{partial.selector_end}'>
       </script>".html_safe
     end
     
     def container_start_tag_empty
-      "<script type='text/javascript' data-sync-start></script>".html_safe
+      "<script type='text/javascript' data-sync-collection-start></script>".html_safe
     end
     
     def container_start_tag(partial_name, resource, scope, refetch, direction, order)
@@ -126,8 +126,8 @@ module Sync
       else
         creator = PartialCreator.new(partial_name, resource, scope, self)
       end
-      "<script type='text/javascript' data-sync-order='#{order.directions_string}'
-        data-sync-start data-sync-id='#{creator.selector}'>
+      "<script type='text/javascript' data-sync-directions='#{order.directions_string}'
+        data-sync-collection-start data-sync-id='#{creator.selector}'>
         Sync.onReady(function(){
           var creator = new Sync.PartialCreator({
             name:         '#{partial_name}',
@@ -143,7 +143,7 @@ module Sync
     end
     
     def container_end_tag
-      "<script type='text/javascript' data-sync-end></script>".html_safe
+      "<script type='text/javascript' data-sync-collection-end></script>".html_safe
     end
     
     # Extract the limit info, if an ActiveRecord::Relation or Sync::Scope 
