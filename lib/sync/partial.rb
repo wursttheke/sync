@@ -32,7 +32,7 @@ module Sync
     def message(action)
       Sync.client.build_message channel_for_action(action),
         html: (render_to_string unless action.to_s == "destroy"),
-        order: order_values_string
+        order: (order_values_string unless action.to_s == "destroy")
     end
 
     def authorized?(auth_token)
@@ -55,18 +55,9 @@ module Sync
     def channel_prefix
       @channel_prefix ||= auth_token
     end
-    
-    def update_channel_prefix
-      @update_channel_prefix ||= refetch_auth_token
-    end
 
     def channel_for_action(action)
-      case action
-      when :update
-        "#{update_channel_prefix}-#{action}"
-      else
-        "#{channel_prefix}-#{action}"
-      end
+      "#{channel_prefix}-#{action}"
     end
 
     def selector_start

@@ -15,7 +15,7 @@ module Sync
     end
 
     def prepare_sync_update
-      add_sync_action :update, self
+      add_sync_action :update, self, default_scope: sync_default_scope
 
       sync_scope_definitions.each do |definition|
         prepare_sync_update_scope(definition)
@@ -42,7 +42,8 @@ module Sync
     # and after the update. If the record has been added to a scope, it 
     # publishes a new partial to the subscribers of that scope. It also sends 
     # a destroy action to subscribers of the scope, if the record has been 
-    # removed from it.
+    # removed from it. If the record has remained in the scope, it creates
+    # a scoped update action
     #
     def prepare_sync_update_scope(scope_definition)
       # Add destroy action for the old scope (scope_before_update) 
@@ -53,10 +54,19 @@ module Sync
           default_scope: sync_default_scope
       end
 
-      # Add new action for the new scope (scope_after_update) if this record has entered it
+      # Add new action for the new scope (scope_after_update) if this 
+      # record has entered it
       if entered_new_scope?(scope_definition)
         add_sync_action :new, record_after_update, 
           scope: scope_after_update(scope_definition), 
+          default_scope: sync_default_scope
+      end
+      
+      # Add update action for the old scope (scope_before_update) if this 
+      # record has remained in it
+      if remained_in_old_scope?(scope_definition)
+        add_sync_action :update, record_after_update, 
+          scope: scope_before_update(scope_definition), 
           default_scope: sync_default_scope
       end
     end
