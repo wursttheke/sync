@@ -31,7 +31,8 @@ module Sync
 
     def message(action)
       Sync.client.build_message channel_for_action(action),
-        html: (render_to_string unless action.to_s == "destroy")
+        html: (render_to_string unless action.to_s == "destroy"),
+        order: order_values_string
     end
 
     def authorized?(auth_token)
