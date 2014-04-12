@@ -6,6 +6,7 @@ class Sync.Partial
     resourceName: null
     resourceId: null
     authToken: null
+    channelPrefix: null
     channelUpdate: null
     channelDestroy: null
     selectorStart: null
@@ -21,6 +22,7 @@ class Sync.Partial
   #   resourceName - The String undercored class name of the resource
   #   resourceId
   #   authToken - The String auth token for the partial
+  #   channelPrefix - The String channel prefix
   #   channelUpdate - The String channel to listen for update publishes on
   #   channelDestroy - The String channel to listen for destroy publishes on
   #   selectorStart - The String selector to mark beginning in the DOM
@@ -30,6 +32,12 @@ class Sync.Partial
   #
   constructor: (attributes = {}) ->
     @[key] = attributes[key] ? defaultValue for key, defaultValue of @attributes
+
+    @channelUpdate    = "#{@channelPrefix}-update"
+    @channelDestroy   = "#{@channelPrefix}-destroy"
+    @selectorStart    = "#{@channelPrefix}-start"
+    @selectorEnd      = "#{@channelPrefix}-end"
+
     @$start = -> $("[data-sync-id='#{@selectorStart}']")
     @$end   = -> $("[data-sync-id='#{@selectorEnd}']")
     @$el    = -> @$start().nextUntil(@$end())

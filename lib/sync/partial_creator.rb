@@ -31,13 +31,9 @@ module Sync
         order: partial.order_values_string,
         resourceId: resource.id,
         authToken: partial.auth_token,
-        channelUpdate: partial.channel_for_action(:update),
-        channelDestroy: partial.channel_for_action(:destroy),
-        selectorStart: partial.selector_start,
-        selectorEnd: partial.selector_end
+        channelPrefix: partial.channel_prefix,
       )
     end
-
 
     private
 

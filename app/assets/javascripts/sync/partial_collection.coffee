@@ -18,7 +18,7 @@ class Sync.PartialCollection
     @name              = element.data('name')
     @resourceName      = element.data('resource-name')
     @channel           = element.data('channel')
-    @selector          = element.data('selector')
+    @selector          = element.data('channel')
     @direction         = element.data('direction')
     @orderDirections   = element.data('order-directions')
     @refetch           = element.data('retetch')
@@ -40,10 +40,7 @@ class Sync.PartialCollection
           resourceName:   @resourceName
           resourceId:     $(item).data('resource-id')
           authToken:      $(item).data('auth-token')
-          channelUpdate:  $(item).data('channel-update')
-          channelDestroy: $(item).data('channel-destroy')
-          selectorStart:  $(item).data('selector-start')
-          selectorEnd:    $(item).data('selector-end')
+          channelPrefix:  $(item).data('channel-prefix')
           refetch:        @refetch
   
         partial.subscribe()
@@ -55,10 +52,7 @@ class Sync.PartialCollection
               data.order,
               data.resourceId,
               data.authToken,
-              data.channelUpdate,
-              data.channelDestroy,
-              data.selectorStart,
-              data.selectorEnd
+              data.channelPrefix
   
   # Return all item start tags inside collection
   #
@@ -140,12 +134,12 @@ class Sync.PartialCollection
       when "prepend" then @$start.after(html)
       when "sort" then @insertSorted(html)
             
-  insert: (html, order, resourceId, authToken, channelUpdate, channelDestroy, selectorStart, selectorEnd) ->
+  insert: (html, order, resourceId, authToken, channelPrefix) ->
     @insertPlaceholder """
-      <script type='text/javascript' data-sync-item-start data-sync-id='#{selectorStart}'
+      <script type='text/javascript' data-sync-item-start data-sync-id='#{channelPrefix}-start'
         data-sync-order='#{order}'></script>
       <script type='text/javascript' data-sync-el-placeholder></script>
-      <script type='text/javascript' data-sync-item-end data-sync-id='#{selectorEnd}'></script>
+      <script type='text/javascript' data-sync-item-end data-sync-id='#{channelPrefix}-end'></script>
     """
     
     partial = new Sync.Partial(
@@ -154,10 +148,7 @@ class Sync.PartialCollection
       resourceName: @resourceName
       resourceId: resourceId
       authToken: authToken
-      channelUpdate: channelUpdate
-      channelDestroy: channelDestroy
-      selectorStart: selectorStart
-      selectorEnd: selectorEnd
+      channelPrefix: channelPrefix
       refetch: @refetch
     )
     partial.subscribe()

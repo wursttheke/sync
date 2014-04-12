@@ -99,10 +99,7 @@ module Sync
         data-sync-id='#{partial.selector_start}'
         data-resource-id='#{partial.resource.model.id}'
         data-auth-token='#{partial.refetch_auth_token}'
-        data-channel-update='#{partial.channel_for_action(:update)}'
-        data-channel-destroy='#{partial.channel_for_action(:destroy)}'
-        data-selector-start='#{partial.selector_start}'
-        data-selector-end='#{partial.selector_end}'></script>
+        data-channel-prefix='#{partial.channel_prefix}'></script>
       #{partial.render}
       <script type='text/javascript' data-sync-item-end data-sync-id='#{partial.selector_end}'>
       </script>".html_safe
@@ -119,12 +116,10 @@ module Sync
         creator = PartialCreator.new(partial_name, resource, scope, self)
       end
       "<script data-sync-collection-start 
-        data-sync-id='#{creator.selector}'
         data-order-directions='#{order.directions_string}'
         data-name='#{partial_name}'
         data-resource-name='#{creator.resource.name}'
         data-channel='#{creator.channel}'
-        data-selector='#{creator.selector}'
         data-direction='#{direction}'
         data-refetch='#{refetch}'></script>".html_safe
     end
