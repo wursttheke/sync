@@ -1,13 +1,4 @@
-class Sync.PartialCreator
-
-  attributes:
-    name: null
-    resourceName: null
-    authToken: null
-    channel: null
-    selector: null
-    direction: 'append'
-    refetch: false
+class Sync.PartialCollection
 
   # attributes
   #
@@ -16,14 +7,47 @@ class Sync.PartialCreator
   #   channel - The String channel to listen for new publishes on
   #   selector - The String selector to find the element in the DOM
   #   direction - The String direction to insert. One of "append" or "prepend"
+  #   orderDirections - Array with order infos.
   #   refetch - The Boolean to refetch markup from server or receive markup
   #             from pubsub update. Default false.
   #
-  constructor: (attributes = {}) ->
-    @[key] = attributes[key] ? defaultValue for key, defaultValue of @attributes
-    @$el = $("[data-sync-id='#{@selector}']")
-    @sortDirections = @$el.data("sync-directions")
+  constructor: (element) ->
+    @$start            = element
+    @$end              = element.nextAll("[data-sync-collection-end]").eq(0)
+
+    @name              = element.data('name')
+    @resourceName      = element.data('resource-name')
+    @channel           = element.data('channel')
+    @selector          = element.data('selector')
+    @direction         = element.data('direction')
+    @orderDirections   = element.data('order-directions')
+    @refetch           = element.data('retetch')
+
     @adapter = Sync.adapter
+
+  init: ->
+    # Subscribe to new items, if channel exists
+    @subscribe() if @channel
+      
+    self = @
+      
+    # Initialize items of this collection
+    for item, index in @items()
+      do ->
+        partial = new Sync.Partial
+          collection:     self
+          name:           @name
+          resourceName:   @resourceName
+          resourceId:     $(item).data('resource-id')
+          authToken:      $(item).data('auth-token')
+          channelUpdate:  $(item).data('channel-update')
+          channelDestroy: $(item).data('channel-destroy')
+          selectorStart:  $(item).data('selector-start')
+          selectorEnd:    $(item).data('selector-end')
+          refetch:        @refetch
+  
+        partial.subscribe()
+
 
   subscribe: ->
     @adapter.subscribe @channel, (data) =>
@@ -39,7 +63,7 @@ class Sync.PartialCreator
   # Return all item start tags inside collection
   #
   items: ->
-    @$el.nextUntil("[data-sync-collection-end]", "[data-sync-item-start]")
+    @$start.nextUntil("[data-sync-collection-end]", "[data-sync-item-start]")
   
   # Return an Array with all item objects containing the order information 
   # needed for sorting. Add the sync_id to it so the DOM node can be found
@@ -56,13 +80,38 @@ class Sync.PartialCreator
       object["sync_id"] = $(item).data("sync-id")
       object
   
+  moveSorted: (itemStart, itemContent, itemEnd) ->
+    # Build Array of items to be sorted
+    itemsCurrent = @itemsForSorting()
+    itemsTarget = itemsCurrent.slice(0)
+
+    currentPosition = (index for item, index in itemsCurrent when item["sync_id"] is itemStart.data("sync-id"))[0]
+
+    # SQL style multi-key asc/desc sorting of object arrays,
+    # extract new position
+    mksort.sort itemsTarget, @orderDirections
+    newPosition = (index for item, index in itemsTarget when item["sync_id"] is itemStart.data("sync-id"))[0]
+
+    # Only move item if position has changed after sorting
+    # Determine the script-tag (successor) before which the item has to be
+    # moved. 
+    if newPosition isnt currentPosition
+      if newPosition is itemsCurrent.length - 1
+        successor = @$end
+      else if newPosition > currentPosition
+        successor = $("[data-sync-id='#{itemsCurrent[newPosition + 1]["sync_id"]}']")
+      else
+        successor = $("[data-sync-id='#{itemsCurrent[newPosition]["sync_id"]}']")
+      
+      successor.before(itemStart, itemContent, itemEnd)
+  
   # Inserts the html placeholder snippet at the correct position in the 
   # collection with regard to @sortDirections
   #
   insertSorted: (html) ->
-    itemStart = $(html).filter ->
-      $(this).is('script')
-
+    itemStart = $(html).first("[data-sync-item-start]")
+      
+    # Extract order object from new HTML snippet and add sync_id to it
     order = itemStart.data("sync-order")
     order["sync_id"] = itemStart.data("sync-id")
     order["new"] = true
@@ -73,22 +122,22 @@ class Sync.PartialCreator
     itemsTarget.push order
     
     # SQL style multi-key asc/desc sorting of object arrays
-    mksort.sort itemsTarget, @sortDirections
+    mksort.sort itemsTarget, @orderDirections
 
     # Get the position of the item to be inserted
     position = (index for item, index in itemsTarget when item["new"]?)[0]
 
     # Insert item at position or at the end of collection
     if position is itemsCurrent.length
-      @$el.nextAll("[data-sync-collection-end]").eq(0).before(html)
+      @$end.before(html)
     else
       $("[data-sync-id='#{itemsCurrent[position]["sync_id"]}']").before(html)
 
 
   insertPlaceholder: (html) ->
     switch @direction
-      when "append"  then @$el.nextAll("[data-sync-collection-end]").eq(0).before(html)
-      when "prepend" then @$el.after(html)
+      when "append"  then @$end.before(html)
+      when "prepend" then @$start.after(html)
       when "sort" then @insertSorted(html)
             
   insert: (html, order, resourceId, authToken, channelUpdate, channelDestroy, selectorStart, selectorEnd) ->
@@ -98,7 +147,9 @@ class Sync.PartialCreator
       <script type='text/javascript' data-sync-el-placeholder></script>
       <script type='text/javascript' data-sync-item-end data-sync-id='#{selectorEnd}'></script>
     """
+    
     partial = new Sync.Partial(
+      collection: @
       name: @name
       resourceName: @resourceName
       resourceId: resourceId

@@ -94,23 +94,15 @@ module Sync
     private
     
     def partial_tags(partial, refetch)
-      "<script type='text/javascript' data-sync-order='#{partial.order_values_string}' 
-        data-sync-item-start data-sync-id='#{partial.selector_start}'>
-        Sync.onReady(function(){
-          var partial = new Sync.Partial({
-            name:           '#{partial.name}',
-            resourceName:   '#{partial.resource.name}',
-            resourceId:     '#{partial.resource.model.id}',
-            authToken:      '#{partial.refetch_auth_token}',
-            channelUpdate:  '#{partial.channel_for_action(:update)}',
-            channelDestroy: '#{partial.channel_for_action(:destroy)}',
-            selectorStart:  '#{partial.selector_start}',
-            selectorEnd:    '#{partial.selector_end}',
-            refetch:        #{refetch}
-          });
-          partial.subscribe();
-        });
-      </script>
+      "<script type='text/javascript' data-sync-item-start
+        data-sync-order='#{partial.order_values_string}' 
+        data-sync-id='#{partial.selector_start}'
+        data-resource-id='#{partial.resource.model.id}'
+        data-auth-token='#{partial.refetch_auth_token}'
+        data-channel-update='#{partial.channel_for_action(:update)}'
+        data-channel-destroy='#{partial.channel_for_action(:destroy)}'
+        data-selector-start='#{partial.selector_start}'
+        data-selector-end='#{partial.selector_end}'></script>
       #{partial.render}
       <script type='text/javascript' data-sync-item-end data-sync-id='#{partial.selector_end}'>
       </script>".html_safe
@@ -126,20 +118,15 @@ module Sync
       else
         creator = PartialCreator.new(partial_name, resource, scope, self)
       end
-      "<script type='text/javascript' data-sync-directions='#{order.directions_string}'
-        data-sync-collection-start data-sync-id='#{creator.selector}'>
-        Sync.onReady(function(){
-          var creator = new Sync.PartialCreator({
-            name:         '#{partial_name}',
-            resourceName: '#{creator.resource.name}',
-            channel:      '#{creator.channel}',
-            selector:     '#{creator.selector}',
-            direction:    '#{direction}',
-            refetch:      #{refetch}
-          });
-          creator.subscribe();
-        });
-      </script>".html_safe
+      "<script data-sync-collection-start 
+        data-sync-id='#{creator.selector}'
+        data-order-directions='#{order.directions_string}'
+        data-name='#{partial_name}'
+        data-resource-name='#{creator.resource.name}'
+        data-channel='#{creator.channel}'
+        data-selector='#{creator.selector}'
+        data-direction='#{direction}'
+        data-refetch='#{refetch}'></script>".html_safe
     end
     
     def container_end_tag

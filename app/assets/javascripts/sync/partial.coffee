@@ -1,6 +1,7 @@
 class Sync.Partial
 
   attributes:
+    collection: null
     name: null
     resourceName: null
     resourceId: null
@@ -29,24 +30,27 @@ class Sync.Partial
   #
   constructor: (attributes = {}) ->
     @[key] = attributes[key] ? defaultValue for key, defaultValue of @attributes
-    @$start = $("[data-sync-id='#{@selectorStart}']")
-    @$end   = $("[data-sync-id='#{@selectorEnd}']")
-    @$el    = @$start.nextUntil(@$end)
-    @view   = new (Sync.viewClassFromPartialName(@name, @resourceName))(@$el, @name)
+    @$start = -> $("[data-sync-id='#{@selectorStart}']")
+    @$end   = -> $("[data-sync-id='#{@selectorEnd}']")
+    @$el    = -> @$start().nextUntil(@$end())
+    @view   = new (Sync.viewClassFromPartialName(@name, @resourceName))(@$el(), @name)
     @adapter = Sync.adapter
 
 
   subscribe: ->
     @subscriptionUpdate = @adapter.subscribe @channelUpdate, (data) =>
       if @refetch
-        @refetchFromServer (html) => @update(html)
+        @refetchFromServer (data) => @update(data)
       else
-        @update(data.html)
+        @update(data)
 
     @subscriptionDestroy = @adapter.subscribe @channelDestroy, => @remove()
 
   
-  update: (html) -> @view.beforeUpdate(html, {})
+  update: (data) -> 
+    @view.beforeUpdate(data.html, {})
+    @$start().data "sync-order", JSON.parse(data.order)
+    @collection.moveSorted(@$start(), @$el(), @$end()) unless data.order.length is 0
 
   remove: -> 
     @view.beforeRemove()
@@ -63,12 +67,12 @@ class Sync.Partial
   destroy: ->
     @subscriptionUpdate.cancel()
     @subscriptionDestroy.cancel()
-    @$start.remove()
-    @$end.remove()
-    @$el?.remove()
-    delete @$start
-    delete @$end
-    delete @$el
+    @$start().remove()
+    @$end().remove()
+    @$el()?.remove()
+    delete @$start()
+    delete @$end()
+    delete @$el()
 
 
   refetchFromServer: (callback) ->
@@ -80,5 +84,5 @@ class Sync.Partial
         partial_name: @name
         resource_name: @resourceName
         resource_id: @resourceId
-      success: (data) -> callback(data.html)
+      success: (data) -> callback(data)
 
