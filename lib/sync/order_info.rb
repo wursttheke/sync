@@ -2,22 +2,47 @@ module Sync
   class OrderInfo
     attr_accessor :order_hash
     
+    def initialize
+      @order_hash = ActiveSupport::OrderedHash.new
+    end
+
     # Extract the order info from a passed Sync::Scope and prepare it for
     # being sent down to the client. It will be used to sort synced collection 
     # items locally in the browser via JS
     #
-    def initialize(scopes)
-      @order_hash = ActiveSupport::OrderedHash.new
+    def self.from_scope(scopes)
+      info = self.new
       scopes = [scopes] unless scopes.is_a?(Array)
       scopes.each do |scope|
         if scope.is_a?(Sync::Scope)
           scope.orders.map do |order|
             if order.is_a?(Arel::Node)
-              @order_hash[order.expr.name.to_sym] = order.is_a?(Arel::Nodes::Descending) ? :desc : :asc
+              info.add_direction order.expr.name, (order.is_a?(Arel::Nodes::Descending) ? :desc : :asc)
             end
           end
         end
       end
+      info
+    end
+
+    # Add an order direction
+    #
+    def add_direction(key, direction = :asc)
+      @order_hash[key.to_sym] = direction
+    end
+    
+    # Add multiple order direction keys via an Array
+    # (e.g [:name, :age]). Default direction (:asc) will be used.
+    #
+    def add_directions(keys)
+      keys = [keys].flatten.compact
+      keys.each do |key|
+        add_direction(key)
+      end
+    end
+
+    def direction_keys
+      @order_hash.keys
     end
 
     # Return the directional information of the order statement in a json
@@ -58,7 +83,7 @@ module Sync
           # be enough for the JS comparison of items. We could make this 
           # configurable in the future, if needed.
           #
-          model.send(name).to_s.downcase.gsub(/[^0-9A-Za-z.\-]/, '')[0..9]
+          model.send(name).to_s.gsub(/[^0-9A-Za-z.\-]/, '')[0..9]
         end
       end
 

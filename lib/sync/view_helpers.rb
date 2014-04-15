@@ -51,7 +51,7 @@ module Sync
       scope        = options[:channel] || options[:scope] || (collection.is_a?(Sync::Scope) ? collection : nil)
       partial_name = options.fetch(:partial, scope)
       refetch      = options.fetch(:refetch, false)
-      order        = Sync::OrderInfo.new(collection)
+      order        = Sync::OrderInfo.from_scope(scope)
       direction    = options.fetch(:direction, order.empty? ? :append : :sort)
       limit        = limit_info(collection)
 
@@ -97,7 +97,10 @@ module Sync
       "<script type='text/javascript' data-sync-item-start
         data-sync-order='#{partial.order_values_string}' 
         data-sync-id='#{partial.selector_start}'
+        data-name='#{partial.name}'
+        data-resource-name='#{partial.resource.name}'
         data-resource-id='#{partial.resource.model.id}'
+        data-refetch='#{refetch}'
         data-auth-token='#{partial.refetch_auth_token}'
         data-channel-prefix='#{partial.channel_prefix}'></script>
       #{partial.render}

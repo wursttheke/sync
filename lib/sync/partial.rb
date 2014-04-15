@@ -1,6 +1,6 @@
 module Sync
   class Partial
-    attr_accessor :name, :resource, :context
+    attr_accessor :name, :resource, :context, :order_info
 
     def self.all(model, context, scope = nil)
       resource = Resource.new(model, scope)
@@ -14,6 +14,7 @@ module Sync
     def initialize(name, resource, scope, context)
       self.name = name
       self.resource = Resource.new(resource, scope)
+      self.order_info = OrderInfo.from_scope(scope)
       self.context = context
     end
 
@@ -40,7 +41,7 @@ module Sync
     end
 
     def auth_token
-      @auth_token ||= Channel.new("#{polymorphic_path}-_#{name}").to_s
+      @auth_token ||= Channel.new("#{polymorphic_path}-#{name}-#{order_keys_string}").to_s
     end
     
     # For the refetch feature we need an auth_token that wasn't created
@@ -49,7 +50,7 @@ module Sync
     # only on model_name and id plus the name of this partial
     #
     def refetch_auth_token
-      @refetch_auth_token ||= Channel.new("#{model_path}-_#{name}").to_s
+      @refetch_auth_token ||= Channel.new("#{model_path}-#{name}-#{order_keys_string}").to_s
     end
 
     def channel_prefix
@@ -73,7 +74,15 @@ module Sync
     end
 
     def order_values_string
-      OrderInfo.new(resource.scopes).values_string(resource.model)
+      order_info.values_string(resource.model)
+    end
+    
+    def order_values
+      order_info.values(resource.model)
+    end
+
+    def order_keys_string
+      order_info.direction_keys.join("-")
     end
 
     private

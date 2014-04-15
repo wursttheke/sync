@@ -20,7 +20,7 @@ class Sync.PartialCollection
     @channel           = element.data('channel')
     @selector          = element.data('channel')
     @direction         = element.data('direction')
-    @orderDirections   = element.data('order-directions')
+    @orderDirections   = element.data('order-directions') || {}
     @refetch           = element.data('retetch')
 
     @adapter = Sync.adapter
@@ -34,25 +34,12 @@ class Sync.PartialCollection
     # Initialize items of this collection
     for item, index in @items()
       do ->
-        partial = new Sync.Partial
-          collection:     self
-          name:           @name
-          resourceName:   @resourceName
-          resourceId:     $(item).data('resource-id')
-          authToken:      $(item).data('auth-token')
-          channelPrefix:  $(item).data('channel-prefix')
-          refetch:        @refetch
-  
+        partial = new Sync.Partial($(item), self)
         partial.subscribe()
 
 
   subscribe: ->
-    @adapter.subscribe @channel, (data) =>
-      @insert data.html,
-              data.order,
-              data.resourceId,
-              data.authToken,
-              data.channelPrefix
+    @adapter.subscribe @channel, (data) => @insert data
   
   # Return all item start tags inside collection
   #
@@ -134,23 +121,23 @@ class Sync.PartialCollection
       when "prepend" then @$start.after(html)
       when "sort" then @insertSorted(html)
             
-  insert: (html, order, resourceId, authToken, channelPrefix) ->
+  insert: (data) ->
     @insertPlaceholder """
-      <script type='text/javascript' data-sync-item-start data-sync-id='#{channelPrefix}-start'
-        data-sync-order='#{order}'></script>
+      <script type='text/javascript' data-sync-item-start 
+        data-sync-id='#{data.channelPrefix}-start'
+        data-sync-order='#{data.order}'
+        data-name='#{@name}'
+        data-resource-name='#{@resourceName}'
+        data-resource-id='#{data.resourceId}'
+        data-refetch='#{@refetch}'
+        data-auth-token='#{data.authToken}'
+        data-channel-prefix='#{data.channelPrefix}'>
+      </script>
       <script type='text/javascript' data-sync-el-placeholder></script>
-      <script type='text/javascript' data-sync-item-end data-sync-id='#{channelPrefix}-end'></script>
+      <script type='text/javascript' data-sync-item-end data-sync-id='#{data.channelPrefix}-end'></script>
     """
     
-    partial = new Sync.Partial(
-      collection: @
-      name: @name
-      resourceName: @resourceName
-      resourceId: resourceId
-      authToken: authToken
-      channelPrefix: channelPrefix
-      refetch: @refetch
-    )
+    partial = new Sync.Partial($("[data-sync-id='#{data.channelPrefix}-start']") , @)
     partial.subscribe()
-    partial.insert(html)
+    partial.insert(data.html)
 

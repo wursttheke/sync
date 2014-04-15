@@ -10,16 +10,18 @@ module Sync
       end
     end
 
-    def self.find(model, partial_name, context)
+    def self.find(model, partial_name, order_keys, context)
       resource = Resource.new(model)
       plural_name = resource.plural_name
       partial = Dir["#{Sync.views_root}/#{plural_name}/refetch/_#{partial_name}.*"].first
       return unless partial
-      RefetchPartial.new(partial_name, resource.model, nil, context)
+      partial = RefetchPartial.new(partial_name, resource.model, nil, context)
+      partial.order_info.add_directions(order_keys)
+      partial
     end
 
-    def self.find_by_authorized_resource(model, partial_name, context, auth_token)
-      partial = find(model, partial_name, context)
+    def self.find_by_authorized_resource(model, partial_name, context, order_keys, auth_token)
+      partial = find(model, partial_name, order_keys, context)
       return unless partial && partial.authorized?(auth_token)
 
       partial

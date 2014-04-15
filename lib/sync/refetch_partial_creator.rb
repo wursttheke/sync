@@ -1,20 +1,18 @@
 module Sync
   class RefetchPartialCreator < PartialCreator
 
-    def initialize(name, resource, scoped_resource, context)
+    def initialize(name, resource, scopes, context)
       super
-      self.partial = RefetchPartial.new(name, self.resource.model, nil, context)
+      self.partial = RefetchPartial.new(name, self.resource.model, scopes, context)
     end
 
     def message
       Sync.client.build_message(channel,
         refetch: true,
+        order: partial.order_values_string,
         resourceId: resource.id,
-        authToken: partial.auth_token,
-        channelUpdate: partial.channel_for_action(:update),
-        channelDestroy: partial.channel_for_action(:destroy),
-        selectorStart: partial.selector_start,
-        selectorEnd: partial.selector_end
+        authToken: partial.refetch_auth_token,
+        channelPrefix: partial.channel_prefix
       )
     end
   end

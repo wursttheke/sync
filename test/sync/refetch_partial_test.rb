@@ -9,6 +9,7 @@ describe Sync::RefetchPartial do
   before do
     @context = ActionController::Base.new
     @partial = Sync::RefetchPartial.new("show", User.new, nil, @context)
+    @partial.order_info.add_directions [:name, :age]
   end
  
   describe '#self.all' do
@@ -20,33 +21,46 @@ describe Sync::RefetchPartial do
 
   describe '#self.find' do
     it 'finds partial given resource and partial name' do
-      assert_equal Sync::RefetchPartial, Sync::RefetchPartial.find(User.new, 'show', @context).class
+      assert_equal Sync::RefetchPartial, Sync::RefetchPartial.find(User.new, 'show', [], @context).class
     end
 
     it 'returns nil if partial does not exist' do
-      refute Sync::RefetchPartial.find(User.new, 'not_exist', nil)
+      refute Sync::RefetchPartial.find(User.new, 'not_exist', [], nil)
     end
   end
 
   describe '#self.find_by_authorized_resource' do
 
-    it 'returns partial when given auth token for resource and template' do
+    it 'returns partial when given auth token for resource and template and oder_keys' do
       assert_equal Sync::RefetchPartial, Sync::RefetchPartial.find_by_authorized_resource(
         @partial.resource.model,
         @partial.name,
-        nil, 
+        nil,
+        [:name, :age],
         @partial.auth_token
       ).class
     end
 
-    it 'returns nil when given invalid auth token for resource and template' do
+    it 'returns nil when given invalid auth token for resource and template and oder_keys' do
       refute Sync::RefetchPartial.find_by_authorized_resource(
         @partial.resource.model,
         @partial.name,
-        nil, 
+        nil,
+        [:name, :age],
         "invalid auth token"
       )
     end
+
+    it 'returns nil when given invalid auth token for resource and template and oder_keys' do
+      refute Sync::RefetchPartial.find_by_authorized_resource(
+        @partial.resource.model,
+        @partial.name,
+        nil,
+        [:name, :age, :other_column],
+        @partial.auth_token
+      )
+    end
+
   end
 
   describe '#render_to_string' do

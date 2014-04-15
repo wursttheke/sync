@@ -8,7 +8,8 @@ class Sync::RefetchesController < ApplicationController
 
   def show
     render json: {
-      html: with_format(:html){ @partial.render_to_string }
+      html: with_format(:html){ @partial.render_to_string },
+      order: @partial.order_values
     }
   end
 
@@ -48,6 +49,7 @@ class Sync::RefetchesController < ApplicationController
       @resource,
       params[:partial_name],
       self,
+      params[:order],
       params[:auth_token]
     ) || render_bad_request
   end

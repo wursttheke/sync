@@ -30,8 +30,15 @@ class Sync.Partial
   #   refetch - The Boolean to refetch markup from server or receive markup
   #             from pubsub update. Default false.
   #
-  constructor: (attributes = {}) ->
-    @[key] = attributes[key] ? defaultValue for key, defaultValue of @attributes
+  constructor: ($start, collection) ->
+    @collection    = collection
+    
+    @name          = $start.data('name')
+    @resourceName  = $start.data('resource-name')
+    @resourceId    = $start.data('resource-id')
+    @refetch       = $start.data('refetch')
+    @authToken     = $start.data('auth-token')
+    @channelPrefix = $start.data('channel-prefix')
 
     @channelUpdate    = "#{@channelPrefix}-update"
     @channelDestroy   = "#{@channelPrefix}-destroy"
@@ -57,7 +64,7 @@ class Sync.Partial
   
   update: (data) -> 
     @view.beforeUpdate(data.html, {})
-    @$start().data "sync-order", JSON.parse(data.order)
+    @$start().data "sync-order", data.order
     @collection.moveSorted(@$start(), @$el(), @$end()) unless data.order.length is 0
 
   remove: -> 
@@ -67,7 +74,7 @@ class Sync.Partial
 
   insert: (html) ->
     if @refetch
-      @refetchFromServer (html) => @view.beforeInsert($($.trim(html)), {})
+      @refetchFromServer (data) => @view.beforeInsert($($.trim(data.html)), {})
     else
       @view.beforeInsert($($.trim(html)), {})
 
@@ -89,6 +96,7 @@ class Sync.Partial
       url: "/sync/refetch.json"
       data:
         auth_token: @authToken
+        order: Object.keys(@collection.orderDirections)
         partial_name: @name
         resource_name: @resourceName
         resource_id: @resourceId
