@@ -21,7 +21,7 @@ class Sync.PartialCollection
     @selector          = element.data('channel')
     @direction         = element.data('direction')
     @orderDirections   = element.data('order-directions') || {}
-    @refetch           = element.data('retetch')
+    @refetch           = element.data('refetch')
 
     @adapter = Sync.adapter
 
