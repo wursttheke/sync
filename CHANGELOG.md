@@ -1,3 +1,55 @@
+# Verions X.Y.Z
+
+This release adds automatic sorting of partial collections.
+
+- Sorted inserting/updating of collections
+
+  Sync tries to detect the directional information from your passed collection. For this feature to work, you need to use sync_scopes with a Rails4/Arel-like order statement.
+  
+  Rails 4: Use the new symbol style order statement:
+  sync_scope :ordered, -> { order(created_at: :desc) }
+
+  Rails 3: You have to use the arel table to define the order clause like this: order(Todo.arel_table[:created_at].desc)
+  
+  Sync cannot recognize the string style order statement and will ignore it: order("created_at DESC")
+  
+- Automatic syncing of new records by default
+  
+  New records will now by sync'd automatically. No need to call `sync_new` anymore. See down below for the details.
+
+####Breaking Changes:
+
+- The `sync_new` ViewHelper has been deprecated. New partials will now be sync'd automatically by default, if a sync_scope is passed:
+  
+  ```ruby
+  class User < ActiveRecord::Base
+    sync :all
+    sync_scope :with_highscore, -> { order(highscore: :desc).limit(10) }
+  end
+  ```
+
+  ```erb
+  <%= sync partial: "user", collection: User.with_highscore %>
+  ```
+  
+  If you don't want to subscribe to new records, pass `new: false` as an option to your `sync` call:
+  
+  ```erb
+  <%= sync partial: "user", collection: User.with_highscore, new: false %>
+  ```
+  
+  If you are not passing a sync_scope, but still want to subscribe to new records, you need to pass a new resource instance via the ´:new´ option:
+  
+  ```erb
+  <%= sync partial: "user", collection: User.all, new: User.new, direction: :append %>
+  ```  
+  
+- If you are using the controller way of manually syncing scoped partials, you will now have to add the scope parameter to the `sync_update` call as well:
+
+  ```ruby
+  sync_update @comment, scope: @todo
+  ```
+
 # Version 0.3.0 - March 3, 2014
 
 This release focuses on improving and extending the model DSL for setting up automatic syncing in advanced use cases. 
