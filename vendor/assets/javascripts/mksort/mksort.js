@@ -37,6 +37,16 @@ mksort = {};
 		d = d !== null ? d : 1;
 		// a = a.toLowerCase(); // this breaks numbers
 		// b = b.toLowerCase();
+    
+    // Handle null values
+    if (isNum(a) || isNum(b)) {
+      a = a || 0;
+      b = b || 0;
+    } else {
+      a = a || '';
+      b = b || '';
+    }
+    
 		a = isNum(a) ? a*1 : a.toLowerCase(); // restore numbers
 		b = isNum(b) ? b*1 : b.toLowerCase();
 		if (a == b)
