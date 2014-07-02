@@ -18,15 +18,20 @@ $ = jQuery
       @bindUnsubscribe()
 
 
-  # Handle Turbolinks teardown, unsubscribe from all channels before transition
+  # Handle Turbolinks teardown, unsubscribe from all channels before transition,
+  # reexecute on restore and page:load
   bindUnsubscribe: ->
     $(document).bind "page:fetch", => @adapter.unsubscribeAll()
     $(document).bind "page:restore", => @reexecuteScripts()
+    $(document).bind "page:load", => @reexecuteScripts()
 
-
-  # Handle Turbolinks cache restore, re-eval all sync script tags
+  # Handle Turbolinks cache restore, re-init all sync partial collections
   reexecuteScripts: ->
-    eval($(script).html()) for script in $("script[data-sync-id]")
+    # eval($(script).html()) for script in $("script[data-sync-id]")
+    for element, index in $("[data-sync-collection-start]")
+      do ->
+        collection = new Sync.PartialCollection($(element))
+        collection.init()
 
 
   onConnectFailure: (error) -> #noop
