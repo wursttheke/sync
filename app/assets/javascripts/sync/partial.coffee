@@ -65,7 +65,7 @@ class Sync.Partial
   update: (data) -> 
     @view.beforeUpdate(data.html, {})
     @$start().data "sync-order", data.order
-    @collection.moveSorted(@$start(), @$el(), @$end()) unless data.order.length is 0
+    # @collection.moveSorted(@$start(), @$el(), @$end()) unless data.order.length is 0
 
   remove: -> 
     @view.beforeRemove()

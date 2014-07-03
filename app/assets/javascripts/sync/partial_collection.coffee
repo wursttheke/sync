@@ -119,7 +119,8 @@ class Sync.PartialCollection
     switch @direction
       when "append"  then @$end.before(html)
       when "prepend" then @$start.after(html)
-      when "sort" then @insertSorted(html)
+      #when "sort" then @insertSorted(html)
+      when "sort"  then @$end.before(html)
             
   insert: (data) ->
     @insertPlaceholder """
