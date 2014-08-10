@@ -1,4 +1,4 @@
-//= require mksort/mksort
+//= require tinysort/jquery.tinysort.js
 
 //= require sync/base
 

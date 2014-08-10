@@ -1,11 +1,12 @@
 module Sync
   class PartialCreator
-    attr_accessor :name, :resource, :context, :partial
+    attr_accessor :name, :resource, :context, :partial, :refetch
 
     def initialize(name, resource, scopes, context)
       self.name = name
       self.resource = Resource.new(resource, scopes)
       self.context = context
+      self.refetch = false
       self.partial = Partial.new(name, self.resource.model, scopes, context)
     end
 

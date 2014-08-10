@@ -22,11 +22,11 @@ $ = jQuery
   # reexecute on restore and page:load
   bindUnsubscribe: ->
     $(document).bind "page:fetch", => @adapter.unsubscribeAll()
-    $(document).bind "page:restore", => @reexecuteScripts()
-    $(document).bind "page:load", => @reexecuteScripts()
+    $(document).bind "page:restore", => @reinitCollections()
+    $(document).bind "page:load", => @reinitCollections()
 
   # Handle Turbolinks cache restore, re-init all sync partial collections
-  reexecuteScripts: ->
+  reinitCollections: ->
     # eval($(script).html()) for script in $("script[data-sync-id]")
     for element, index in $("[data-sync-collection-start]")
       do ->

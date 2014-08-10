@@ -6,7 +6,7 @@ module Sync
     # sync_update and sync_destroy channels from pubsub server
     #
     # Supports automatic ordering of collections on change
-    # Use a sync_scope with an order clause to enable this.
+    # Use a sync_scope with an order clause to enable this feature.
     #
     # Rails 4: Use the new symbol style order statement:
     # sync_scope :ordered, -> { order(created_at: :desc) }
@@ -43,92 +43,52 @@ module Sync
     #   Sync all changes to a single ActiveRecord resource (update, delete):
     #   <%= sync partial: 'todo', resource: Todo.find(123) %>
     #
-    #   Sync all changes (new, update, destroy) to an Sync::Scope collection
+    #   Sync all changes (new, update, destroy) to a Sync::Scope collection
     #   <%= sync partial: 'todo', collection: Todo.top %>
     #
     def sync(options = {})
-      collection   = options[:collection] || [options.fetch(:resource)]
-      scope        = options[:channel] || options[:scope] || (collection.is_a?(Sync::Scope) ? collection : nil)
-      partial_name = options.fetch(:partial, scope)
-      refetch      = options.fetch(:refetch, false)
-      order        = Sync::OrderInfo.from_scope(scope)
-      direction    = options.fetch(:direction, order.empty? ? :append : :sort)
-      limit        = limit_info(collection)
+      options[:collection] ||= [options.fetch(:resource)]
+      options[:scope]      ||= options[:collection].is_a?(Sync::Scope) ? options[:collection] : nil
+      options[:partial_name] = options.fetch(:partial, options[:scope])
+      options[:order]        = Sync::OrderInfo.from_scope(options[:scope])
+      options[:direction]  ||= options[:order].empty? ? :append : :sort
+      options[:limit]        = limit_info(options[:collection])
 
-      new_resource = if options[:new]
+      options[:new] = if options[:new]
         options[:new]
-      elsif collection.is_a?(ActiveRecord::Relation) || collection.is_a?(Sync::Scope)
-        collection.new
+      elsif options[:collection].is_a?(ActiveRecord::Relation) || options[:collection].is_a?(Sync::Scope)
+        options[:collection].new
       else
         false
       end
 
-      results = []
-      
-      if new_resource
-        results << container_start_tag(partial_name, new_resource, scope, refetch, direction, order)
-      else
-        results << container_start_tag_empty
-      end
-      
-      collection.each do |resource|
-        if refetch
-          partial = RefetchPartial.new(partial_name, resource, scope, self)
-        else
-          partial = Partial.new(partial_name, resource, scope, self)
-        end
-        results << partial_tags(partial, refetch)
-      end
-
-      results << container_end_tag
-      safe_join(results)
+      collection_tags(options)
     end
 
-    # DEPRECATED: Setup listener for new resource from sync_new channel, 
-    # appending partial in place
-    #
-    def sync_new(options = {})
-      warn "[DEPRECATION] `sync_new` is deprecated. See CHANGELOG for details."
-    end
-    
     private
     
-    def partial_tags(partial, refetch)
-      "<script type='text/javascript' data-sync-item-start
-        data-sync-order='#{partial.order_values_string}' 
-        data-sync-id='#{partial.selector_start}'
-        data-name='#{partial.name}'
-        data-resource-name='#{partial.resource.name}'
-        data-resource-id='#{partial.resource.model.id}'
-        data-refetch='#{refetch}'
-        data-auth-token='#{partial.refetch_auth_token}'
-        data-channel-prefix='#{partial.channel_prefix}'></script>
-      #{partial.render}
-      <script type='text/javascript' data-sync-item-end data-sync-id='#{partial.selector_end}'>
-      </script>".html_safe
-    end
-    
-    def container_start_tag_empty
-      "<script type='text/javascript' data-sync-collection-start></script>".html_safe
-    end
-    
-    def container_start_tag(partial_name, resource, scope, refetch, direction, order)
-      if refetch
-        creator = RefetchPartialCreator.new(partial_name, resource, scope, self)
-      else
-        creator = PartialCreator.new(partial_name, resource, scope, self)
+    def collection_tags(options)
+      partial_collection = PartialCollection.new(options)
+
+      capture do
+        concat content_tag :script, nil, data: partial_collection.data_attributes_start
+
+        options[:collection].each do |resource|
+          klass = options[:refetch] ? RefetchPartial : Partial
+          partial = klass.new(options[:partial_name], resource, options[:scope], self)
+          concat partial_tags(partial)
+        end
+
+        concat content_tag :script, nil, data: partial_collection.data_attributes_end
       end
-      "<script data-sync-collection-start 
-        data-order-directions='#{order.directions_string}'
-        data-name='#{partial_name}'
-        data-resource-name='#{creator.resource.name}'
-        data-channel='#{creator.channel}'
-        data-direction='#{direction}'
-        data-refetch='#{refetch}'></script>".html_safe
     end
     
-    def container_end_tag
-      "<script type='text/javascript' data-sync-collection-end></script>".html_safe
+    def partial_tags(partial)
+      capture do
+        concat content_tag :script, nil, data: partial.data_attributes_start
+        concat partial.render
+        concat content_tag :script, nil, data: partial.data_attributes_end
+      end
     end
     
     # Extract the limit info, if an ActiveRecord::Relation or Sync::Scope 

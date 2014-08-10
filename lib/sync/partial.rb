@@ -84,6 +84,27 @@ module Sync
     def order_keys_string
       order_info.direction_keys.join("-")
     end
+    
+    def data_attributes_start
+      {
+        sync_item_start: true,
+        sync_order: order_values_string,
+        sync_id: selector_start,
+        name: name,
+        resource_name: resource.name,
+        resource_id: resource.model.id,
+        refetch: self.is_a?(RefetchPartial),
+        auth_token: refetch_auth_token,
+        channel_prefix: channel_prefix
+      }
+    end
+
+    def data_attributes_end
+      {
+        sync_item_end: true,
+        sync_id: selector_end
+      }
+    end
 
     private
 

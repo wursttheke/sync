@@ -3,6 +3,7 @@ module Sync
 
     def initialize(name, resource, scopes, context)
       super
+      self.refetch = true
       self.partial = RefetchPartial.new(name, self.resource.model, scopes, context)
     end
 

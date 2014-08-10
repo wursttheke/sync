@@ -13,7 +13,6 @@ class Sync.PartialCollection
   #
   constructor: (element) ->
     @$start            = element
-    @$end              = element.nextAll("[data-sync-collection-end]").eq(0)
 
     @name              = element.data('name')
     @resourceName      = element.data('resource-name')
@@ -22,6 +21,8 @@ class Sync.PartialCollection
     @direction         = element.data('direction')
     @orderDirections   = element.data('order-directions') || {}
     @refetch           = element.data('refetch')
+
+    @$end              = element.nextAll("[data-sync-collection-end]").eq(0)
 
     @adapter = Sync.adapter
 
@@ -45,81 +46,11 @@ class Sync.PartialCollection
   #
   items: ->
     @$start.nextUntil("[data-sync-collection-end]", "[data-sync-item-start]")
-  
-  # Return an Array with all item objects containing the order information 
-  # needed for sorting. Add the sync_id to it so the DOM node can be found
-  # later on.
-  #
-  # e.g. [
-  #        {"title":"Bike","age":25,"sync_id":"/995ca57-start"},
-  #        {"title":"Car","age":21},"sync_id":"/0be80c0-start"},
-  #      ]
-  #
-  itemsForSorting: ->
-    for item in @items()
-      object = $(item).data("sync-order")
-      object["sync_id"] = $(item).data("sync-id")
-      object
-  
-  moveSorted: (itemStart, itemContent, itemEnd) ->
-    # Build Array of items to be sorted
-    itemsCurrent = @itemsForSorting()
-    itemsTarget = itemsCurrent.slice(0)
-
-    currentPosition = (index for item, index in itemsCurrent when item["sync_id"] is itemStart.data("sync-id"))[0]
-
-    # SQL style multi-key asc/desc sorting of object arrays,
-    # extract new position
-    mksort.sort itemsTarget, @orderDirections
-    newPosition = (index for item, index in itemsTarget when item["sync_id"] is itemStart.data("sync-id"))[0]
-
-    # Only move item if position has changed after sorting
-    # Determine the script-tag (successor) before which the item has to be
-    # moved. 
-    if newPosition isnt currentPosition
-      if newPosition is itemsCurrent.length - 1
-        successor = @$end
-      else if newPosition > currentPosition
-        successor = $("[data-sync-id='#{itemsCurrent[newPosition + 1]["sync_id"]}']")
-      else
-        successor = $("[data-sync-id='#{itemsCurrent[newPosition]["sync_id"]}']")
-      
-      successor.before(itemStart, itemContent, itemEnd)
-  
-  # Inserts the html placeholder snippet at the correct position in the 
-  # collection with regard to @sortDirections
-  #
-  insertSorted: (html) ->
-    itemStart = $(html).first("[data-sync-item-start]")
-      
-    # Extract order object from new HTML snippet and add sync_id to it
-    order = itemStart.data("sync-order")
-    order["sync_id"] = itemStart.data("sync-id")
-    order["new"] = true
-    
-    # Build Array of items to be sorted, add new item object (order) to it
-    itemsCurrent = @itemsForSorting()
-    itemsTarget = itemsCurrent.slice(0)
-    itemsTarget.push order
-    
-    # SQL style multi-key asc/desc sorting of object arrays
-    mksort.sort itemsTarget, @orderDirections
-
-    # Get the position of the item to be inserted
-    position = (index for item, index in itemsTarget when item["new"]?)[0]
-
-    # Insert item at position or at the end of collection
-    if position is itemsCurrent.length
-      @$end.before(html)
-    else
-      $("[data-sync-id='#{itemsCurrent[position]["sync_id"]}']").before(html)
-
 
   insertPlaceholder: (html) ->
     switch @direction
       when "append"  then @$end.before(html)
       when "prepend" then @$start.after(html)
-      #when "sort" then @insertSorted(html)
       when "sort"  then @$end.before(html)
             
   insert: (data) ->
@@ -141,4 +72,5 @@ class Sync.PartialCollection
     partial = new Sync.Partial($("[data-sync-id='#{data.channelPrefix}-start']") , @)
     partial.subscribe()
     partial.insert(data.html)
+    
 
