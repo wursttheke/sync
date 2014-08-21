@@ -47,10 +47,10 @@ module Sync
 
     # Return the directional information of the order statement in a json
     # string for being used as HTML-data-attribute
-    # e.g '{"created_at":"desc","age":"asc"}'
+    # e.g '["desc","asc"]'
     #
     def directions_string
-      @order_hash.to_json
+      @order_hash.values.to_json
     end
 
     # Returns an Array of model attribute values needed for sorting
@@ -88,14 +88,6 @@ module Sync
       end
 
       return_hash
-    end
-    
-    # Returns an HTML safe string with comma seperated model attribute values 
-    # needed for sorting a collection via JS in the browser. 
-    # e.g. "1216523,tom,1"
-    #
-    def values_string(model)
-      values(model).to_json
     end
     
     # Checks if the order information is empty.

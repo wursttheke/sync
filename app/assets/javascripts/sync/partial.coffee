@@ -9,9 +9,8 @@ class Sync.Partial
     channelPrefix: null
     channelUpdate: null
     channelDestroy: null
-    selectorStart: null
-    selectorEnd: null
-    refetch: false
+    
+    view: null
 
     subscriptionUpdate: null
     subscriptionDestroy: null
@@ -25,36 +24,27 @@ class Sync.Partial
   #   channelPrefix - The String channel prefix
   #   channelUpdate - The String channel to listen for update publishes on
   #   channelDestroy - The String channel to listen for destroy publishes on
-  #   selectorStart - The String selector to mark beginning in the DOM
-  #   selectorEnd - The String selector to mark ending in the DOM
-  #   refetch - The Boolean to refetch markup from server or receive markup
-  #             from pubsub update. Default false.
   #
-  constructor: ($start, collection) ->
+  constructor: ($element, collection) ->
+    @$element      = $element
     @collection    = collection
     
-    @name          = $start.data('name')
-    @resourceName  = $start.data('resource-name')
-    @resourceId    = $start.data('resource-id')
-    @refetch       = $start.data('refetch')
-    @authToken     = $start.data('auth-token')
-    @channelPrefix = $start.data('channel-prefix')
+    @name          = $element.data('name')
+    @resourceName  = $element.data('resource-name')
+    @resourceId    = $element.data('resource-id')
+    @authToken     = $element.data('auth-token')
+    @channelPrefix = $element.data('channel-prefix')
 
     @channelUpdate    = "#{@channelPrefix}-update"
     @channelDestroy   = "#{@channelPrefix}-destroy"
-    @selectorStart    = "#{@channelPrefix}-start"
-    @selectorEnd      = "#{@channelPrefix}-end"
 
-    @$start = -> $("[data-sync-id='#{@selectorStart}']")
-    @$end   = -> $("[data-sync-id='#{@selectorEnd}']")
-    @$el    = -> @$start().nextUntil(@$end())
-    @view   = new (Sync.viewClassFromPartialName(@name, @resourceName))(@$el(), @name)
+    @view   = new (Sync.viewClassFromPartialName(@name, @resourceName))(@$element, @name, @)
     @adapter = Sync.adapter
 
 
   subscribe: ->
     @subscriptionUpdate = @adapter.subscribe @channelUpdate, (data) =>
-      if @refetch
+      if @collection.refetch
         @refetchFromServer (data) => @update(data)
       else
         @update(data)
@@ -64,7 +54,7 @@ class Sync.Partial
   
   update: (data) -> 
     @view.beforeUpdate(data.html, {})
-    @$start().data "sync-order", data.order
+    @$element.data "sync-order", data.order
     # @collection.moveSorted(@$start(), @$el(), @$end()) unless data.order.length is 0
 
   remove: -> 
@@ -76,18 +66,14 @@ class Sync.Partial
     if @refetch
       @refetchFromServer (data) => @view.beforeInsert($($.trim(data.html)), {})
     else
-      @view.beforeInsert($($.trim(html)), {})
+      @view.beforeInsert(@$element, {})
 
 
   destroy: ->
     @subscriptionUpdate.cancel()
     @subscriptionDestroy.cancel()
-    @$start().remove()
-    @$end().remove()
-    @$el()?.remove()
-    delete @$start()
-    delete @$end()
-    delete @$el()
+    @$element?.remove()
+    delete @$element
 
 
   refetchFromServer: (callback) ->

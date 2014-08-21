@@ -2,7 +2,7 @@ class Sync.View
   
   removed: false
 
-  constructor: (@$el, @name) ->
+  constructor: (@$el, @name, @partial) ->
 
   beforeUpdate: (html, data) -> @update(html)
 
@@ -32,13 +32,14 @@ class Sync.View
   update: (html) -> 
     $new = $($.trim(html))
     @$el.replaceWith($new)
+    @partial.collection.reorder()
     @$el = $new
     @afterUpdate()
     @bind()
 
 
-  insert: ($el) -> 
-    @$el.replaceWith($el)
+  insert: ($el) ->
+    @partial.collection.insertElement($el)
     @$el = $el
     @afterInsert()
     @bind()

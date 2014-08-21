@@ -63,9 +63,9 @@ describe Sync::RefetchPartial do
 
   end
 
-  describe '#render_to_string' do
+  describe '#render' do
     it 'renders itself as a string from the refetch directory' do
-      assert_equal "<h1>Refetch 1<\/h1>", @partial.render_to_string
+      assert_equal "<h1>Refetch 1<\/h1>", @partial.render
     end
   end
 

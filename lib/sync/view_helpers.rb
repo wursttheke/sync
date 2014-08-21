@@ -53,7 +53,9 @@ module Sync
       options[:order]        = Sync::OrderInfo.from_scope(options[:scope])
       options[:direction]  ||= options[:order].empty? ? :append : :sort
       options[:limit]        = limit_info(options[:collection])
-
+      options[:container]  ||= {}
+      options[:container][:tag] ||= :div
+      
       options[:new] = if options[:new]
         options[:new]
       elsif options[:collection].is_a?(ActiveRecord::Relation) || options[:collection].is_a?(Sync::Scope)
@@ -62,32 +64,57 @@ module Sync
         false
       end
 
-      collection_tags(options)
+      collection_tag(options)
+    end
+
+    def sync_tag_called?
+      @sync_tag_called.present? && @sync_tag_called == true
+    end
+
+    def sync_tag(name, content_or_options_with_block = nil, options = nil, escape = true, &block)
+      sync_tag_called!
+
+      if block_given?
+        options = content_or_options_with_block if content_or_options_with_block.is_a?(Hash)
+        options[:data] ||= {}
+        options[:data].merge!(current_partial.data_attributes)
+        content_tag_string(name, capture(&block), options, escape)
+      else
+        options ||= {}
+        options[:data] ||= {}
+        options[:data].merge!(current_partial.data_attributes)
+        content_tag_string(name, content_or_options_with_block, options, escape)
+      end
+    end
+
+    def current_partial
+      @current_partial
+    end
+    
+    def current_partial=(partial)
+      @current_partial = partial
     end
 
     private
     
-    def collection_tags(options)
+    def reset_sync_tag_called!
+      @sync_tag_called = false
+    end
+
+    def sync_tag_called!
+      @sync_tag_called = true
+    end
+    
+    def collection_tag(options)
       partial_collection = PartialCollection.new(options)
 
-      capture do
-        concat content_tag :script, nil, data: partial_collection.data_attributes_start
-
+      content_tag options[:container][:tag], data: partial_collection.data_attributes do
         options[:collection].each do |resource|
           klass = options[:refetch] ? RefetchPartial : Partial
           partial = klass.new(options[:partial_name], resource, options[:scope], self)
-          concat partial_tags(partial)
+          concat partial.render
+          reset_sync_tag_called!
         end
-
-        concat content_tag :script, nil, data: partial_collection.data_attributes_end
-      end
-    end
-    
-    def partial_tags(partial)
-      capture do
-        concat content_tag :script, nil, data: partial.data_attributes_start
-        concat partial.render
-        concat content_tag :script, nil, data: partial.data_attributes_end
       end
     end
     

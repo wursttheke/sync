@@ -10,7 +10,6 @@ module Sync
     def message
       Sync.client.build_message(channel,
         refetch: true,
-        order: partial.order_values_string,
         resourceId: resource.id,
         authToken: partial.refetch_auth_token,
         channelPrefix: partial.channel_prefix

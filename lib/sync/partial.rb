@@ -18,12 +18,17 @@ module Sync
       self.context = context
     end
 
-    def render_to_string
-      context.render_to_string(partial: path, locals: locals, formats: [:html])
-    end
-
+    # Render the Partial and return the resulting HTML String
+    # Check if user wrapped template content inside a 'sync_tag'. If not,
+    # wrap the evaluated template into the standard sync_tag which is
+    # a simple DIV.
+    #
     def render
-      context.render(partial: path, locals: locals, formats: [:html])
+      context.current_partial = self
+      html = context.render(partial: path, locals: locals, formats: [:html])
+      result = context.sync_tag_called? ? html : context.sync_tag(:div, html)
+      context.current_partial = nil
+      result
     end
 
     def sync(action)
@@ -32,8 +37,7 @@ module Sync
 
     def message(action)
       Sync.client.build_message channel_for_action(action),
-        html: (render_to_string unless action.to_s == "destroy"),
-        order: (order_values_string unless action.to_s == "destroy")
+        html: (render unless action.to_s == "destroy")
     end
 
     def authorized?(auth_token)
@@ -61,20 +65,8 @@ module Sync
       "#{channel_prefix}-#{action}"
     end
 
-    def selector_start
-      "#{channel_prefix}-start"
-    end
-
-    def selector_end
-      "#{channel_prefix}-end"
-    end
-
     def creator_for_scope(scope)
       PartialCreator.new(name, resource.model, scope, context)
-    end
-
-    def order_values_string
-      order_info.values_string(resource.model)
     end
     
     def order_values
@@ -85,25 +77,21 @@ module Sync
       order_info.direction_keys.join("-")
     end
     
-    def data_attributes_start
-      {
-        sync_item_start: true,
-        sync_order: order_values_string,
-        sync_id: selector_start,
+    def data_attributes
+      hash = {
+        sync_item: true,
         name: name,
         resource_name: resource.name,
         resource_id: resource.model.id,
-        refetch: self.is_a?(RefetchPartial),
         auth_token: refetch_auth_token,
         channel_prefix: channel_prefix
       }
-    end
-
-    def data_attributes_end
-      {
-        sync_item_end: true,
-        sync_id: selector_end
-      }
+      
+      order_values.each_with_index do |(key,value),index|
+        hash["sync_order_#{index}".to_sym] = value
+      end
+      
+      hash
     end
 
     private

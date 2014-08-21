@@ -18,9 +18,9 @@ describe Sync::Partial do
     end
   end
 
-  describe '#render_to_string' do
+  describe '#render' do
     it 'renders itself as a string' do
-      assert_equal "<h1>1<\/h1>", @partial.render_to_string
+      assert_equal "<h1>1<\/h1>", @partial.render
     end
   end
   

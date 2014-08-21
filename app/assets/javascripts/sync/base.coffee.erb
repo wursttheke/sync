@@ -27,11 +27,9 @@ $ = jQuery
 
   # Handle Turbolinks cache restore, re-init all sync partial collections
   reinitCollections: ->
-    # eval($(script).html()) for script in $("script[data-sync-id]")
-    for element, index in $("[data-sync-collection-start]")
-      do ->
-        collection = new Sync.PartialCollection($(element))
-        collection.init()
+    for element, index in $("[data-sync-collection]")
+      collection = new Sync.PartialCollection($(element))
+      collection.init()
 
 
   onConnectFailure: (error) -> #noop

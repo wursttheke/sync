@@ -12,8 +12,10 @@ module Sync
       end
     end
 
-    def render_to_string(options)
-      context.render(options)
-    end
+    delegate :current_partial, to: :context
+    delegate :current_partial=, to: :context
+    delegate :render, to: :context
+    delegate :sync_tag, to: :context
+    delegate :sync_tag_called?, to: :context
   end
 end
