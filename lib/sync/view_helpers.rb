@@ -2,10 +2,11 @@ module Sync
 
   module ViewHelpers
 
-    # Surround partial render in script tags, watching for 
-    # sync_update and sync_destroy channels from pubsub server
+    # Surround partial render in a sync_tag (unless already done by the user 
+    # in the partial), watching for sync_update and sync_destroy channels 
+    # from pubsub server
     #
-    # Supports automatic ordering of collections on change
+    # Supports automatic ordering of collections on change.
     # Use a sync_scope with an order clause to enable this feature.
     #
     # Rails 4: Use the new symbol style order statement:
