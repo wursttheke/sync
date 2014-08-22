@@ -17,5 +17,6 @@ module Sync
     delegate :render, to: :context
     delegate :sync_tag, to: :context
     delegate :sync_tag_called?, to: :context
+    delegate :reset_sync_tag_called!, to: :context
   end
 end

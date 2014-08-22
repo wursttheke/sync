@@ -7,12 +7,8 @@ class Sync::RefetchesController < ApplicationController
   before_filter :find_authorized_partial
 
   def show
-    render json: {
-      html: with_format(:html){ @partial.render },
-      order: @partial.order_values
-    }
+    render json: { html: with_format(:html){ @partial.render } }
   end
-
 
   private
 
@@ -48,7 +44,7 @@ class Sync::RefetchesController < ApplicationController
     @partial = Sync::RefetchPartial.find_by_authorized_resource(
       @resource,
       params[:partial_name],
-      self,
+      view_context,
       params[:order],
       params[:auth_token]
     ) || render_bad_request

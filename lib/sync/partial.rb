@@ -28,6 +28,7 @@ module Sync
       html = context.render(partial: path, locals: locals, formats: [:html])
       result = context.sync_tag_called? ? html : context.sync_tag(:div, html)
       context.current_partial = nil
+      context.reset_sync_tag_called!
       result
     end
 

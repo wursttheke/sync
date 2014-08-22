@@ -51,11 +51,8 @@ class Sync.Partial
 
     @subscriptionDestroy = @adapter.subscribe @channelDestroy, => @remove()
 
-  
   update: (data) -> 
     @view.beforeUpdate(data.html, {})
-    @$element.data "sync-order", data.order
-    # @collection.moveSorted(@$start(), @$el(), @$end()) unless data.order.length is 0
 
   remove: -> 
     @view.beforeRemove()
@@ -63,7 +60,7 @@ class Sync.Partial
 
 
   insert: (html) ->
-    if @refetch
+    if @collection.refetch
       @refetchFromServer (data) => @view.beforeInsert($($.trim(data.html)), {})
     else
       @view.beforeInsert(@$element, {})
@@ -82,7 +79,7 @@ class Sync.Partial
       url: "/sync/refetch.json"
       data:
         auth_token: @authToken
-        order: Object.keys(@collection.orderDirections)
+        order: Object.keys(@collection.order)
         partial_name: @name
         resource_name: @resourceName
         resource_id: @resourceId

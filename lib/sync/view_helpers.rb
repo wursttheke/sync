@@ -96,11 +96,11 @@ module Sync
       @current_partial = partial
     end
 
-    private
-    
     def reset_sync_tag_called!
       @sync_tag_called = false
     end
+
+    private
 
     def sync_tag_called!
       @sync_tag_called = true
@@ -114,7 +114,6 @@ module Sync
           klass = options[:refetch] ? RefetchPartial : Partial
           partial = klass.new(options[:partial_name], resource, options[:scope], self)
           concat partial.render
-          reset_sync_tag_called!
         end
       end
     end
