@@ -111,7 +111,7 @@ module Sync
       
       tag_options = options[:container].except(:tag)
       tag_options[:data] ||= {}
-      tag_options[:data].merge(partial_collection.data_attributes)
+      tag_options[:data].merge!(partial_collection.data_attributes)
 
       content_tag options[:container][:tag], tag_options do
         options[:collection].each do |resource|
