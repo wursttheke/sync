@@ -108,8 +108,12 @@ module Sync
     
     def collection_tag(options)
       partial_collection = PartialCollection.new(options)
+      
+      tag_options = options[:container].except(:tag)
+      tag_options[:data] ||= {}
+      tag_options[:data].merge(partial_collection.data_attributes)
 
-      content_tag options[:container][:tag], data: partial_collection.data_attributes do
+      content_tag options[:container][:tag], tag_options do
         options[:collection].each do |resource|
           klass = options[:refetch] ? RefetchPartial : Partial
           partial = klass.new(options[:partial_name], resource, options[:scope], self)
